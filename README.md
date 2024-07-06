@@ -78,7 +78,7 @@ This Flask application converts uploaded design files (images or PDFs) into HTML
 ## Directory Structure
 
 ```
-flask_design_to_code/
+ezweb/
 |-- templates/
 |   |-- index.html
 |   |-- edit.html
