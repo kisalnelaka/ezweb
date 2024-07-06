@@ -4,22 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Generated Code</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        form {
+            margin-top: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 300px;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            resize: vertical;
+            font-family: Consolas, monospace;
+        }
+        input[type="submit"] {
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        input[type="submit"]:hover {
+            background-color: #0056b3;
+        }
+        .download-links {
+            margin-top: 20px;
+            text-align: center;
+        }
+        .download-links a {
+            display: inline-block;
+            padding: 10px 20px;
+            margin-right: 10px;
+            background-color: #28a745;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+        }
+        .download-links a:hover {
+            background-color: #218838;
+        }
+    </style>
 </head>
 <body>
     <h1>Edit Generated Code</h1>
     <form method="post">
         <h2>HTML</h2>
-        <textarea name="html" rows="20" cols="100">{{ html_code }}</textarea>
+        <textarea name="html" placeholder="Enter HTML code..." rows="10">{{ html_code }}</textarea>
         <h2>CSS</h2>
-        <textarea name="css" rows="10" cols="100">{{ css_code }}</textarea>
+        <textarea name="css" placeholder="Enter CSS code..." rows="5">{{ css_code }}</textarea>
         <h2>JavaScript</h2>
-        <textarea name="js" rows="10" cols="100">{{ js_code }}</textarea>
+        <textarea name="js" placeholder="Enter JavaScript code..." rows="5">{{ js_code }}</textarea>
         <br>
         <input type="submit" value="Save Changes">
     </form>
-    <br>
-    <a href="/static/html/generated.html" download="generated.html">Download HTML</a>
-    <a href="/static/css/style.css" download="style.css">Download CSS</a>
-    <a href="/static/js/script.js" download="script.js">Download JavaScript</a>
+    <div class="download-links">
+        <a href="{{ url_for('download_file', filename='html/generated.html') }}" download="generated.html">Download HTML</a>
+        <a href="{{ url_for('download_file', filename='css/style.css') }}" download="style.css">Download CSS</a>
+        <a href="{{ url_for('download_file', filename='js/script.js') }}" download="script.js">Download JavaScript</a>
+    </div>
 </body>
 </html>

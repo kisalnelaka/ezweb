@@ -1,12 +1,19 @@
 import os
+import re
 from flask import Flask, request, render_template, redirect, url_for, send_from_directory
 from PIL import Image
 import pytesseract
 import fitz  # PyMuPDF
+from transformers import AutoModelForCausalLM, AutoTokenizer, pipeline
 
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['GENERATED_FOLDER'] = 'static'
+
+# Load a smaller pre-trained model
+tokenizer = AutoTokenizer.from_pretrained("distilgpt2")
+model = AutoModelForCausalLM.from_pretrained("distilgpt2")
+text_generation = pipeline("text-generation", model=model, tokenizer=tokenizer)
 
 def extract_text_from_image(image_path):
     image = Image.open(image_path)
@@ -21,30 +28,47 @@ def extract_text_from_pdf(pdf_path):
         text += page.get_text()
     return text
 
+def detect_colors_and_images(description):
+    colors = set(re.findall(r'#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3}', description))
+    image_urls = re.findall(r'(http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+\.(?:png|jpg|jpeg|gif))', description)
+    return colors, image_urls
+
 def generate_code_from_description(description):
-    # Simplistic parser to convert text to HTML, CSS, and JS
-    lines = description.split('\n')
-    html_content = ''
-    for line in lines:
-        line = line.strip().lower()
-        if 'header' in line:
-            html_content += f'<header>{line.replace("header", "").strip()}</header>\n'
-        elif 'footer' in line:
-            html_content += f'<footer>{line.replace("footer", "").strip()}</footer>\n'
-        elif 'button' in line:
-            html_content += f'<button>{line.replace("button", "").strip()}</button>\n'
-        elif 'image' in line:
-            html_content += f'<img src="{line.replace("image", "").strip()}" alt="image">\n'
-        elif 'link' in line:
-            html_content += f'<a href="{line.replace("link", "").strip()}">Link</a>\n'
-        else:
-            html_content += f'<p>{line}</p>\n'
+    colors, image_urls = detect_colors_and_images(description)
     
-    html_code = f"<!DOCTYPE html><html><head><title>Generated Page</title><link rel='stylesheet' href='/static/css/style.css'><script src='/static/js/script.js'></script></head><body>{html_content}</body></html>"
-    css_code = "/* Add your CSS here */"
+    # Use the model to generate code
+    result = text_generation(description, max_length=512, num_return_sequences=1)
+    generated_code = result[0]['generated_text']
+    
+    html_content = generated_code
+    
+    # Embed detected images in HTML
+    for image_url in image_urls:
+        html_content += f'<img src="{image_url}" alt="Image">\n'
+    
+    css_code = "/* Add your CSS here */\n"
+    for color in colors:
+        css_code += f".color-{color.lstrip('#')} {{ color: {color}; }}\n"
+
     js_code = "// Add your JavaScript here"
     
+    html_code = f"""<!DOCTYPE html>
+<html>
+<head>
+    <title>Generated Page</title>
+    <link rel='stylesheet' href='/static/css/style.css'>
+    <script src='/static/js/script.js'></script>
+</head>
+<body>
+{html_content}
+</body>
+</html>"""
+
     # Save the files
+    os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'html'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'css'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'js'), exist_ok=True)
+
     with open(os.path.join(app.config['GENERATED_FOLDER'], 'html', 'generated.html'), 'w') as html_file:
         html_file.write(html_code)
     with open(os.path.join(app.config['GENERATED_FOLDER'], 'css', 'style.css'), 'w') as css_file:
@@ -107,17 +131,12 @@ def edit_code():
 
 @app.route('/download/<filename>')
 def download_file(filename):
-    return send_from_directory(app.config['GENERATED_FOLDER'], filename)
+    directory, filename = os.path.split(filename)
+    return send_from_directory(os.path.join(app.config['GENERATED_FOLDER'], directory), filename)
 
 if __name__ == "__main__":
-    if not os.path.exists(app.config['UPLOAD_FOLDER']):
-        os.makedirs(app.config['UPLOAD_FOLDER'])
-    if not os.path.exists(app.config['GENERATED_FOLDER']):
-        os.makedirs(app.config['GENERATED_FOLDER'])
-    if not os.path.exists(os.path.join(app.config['GENERATED_FOLDER'], 'html')):
-        os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'html'))
-    if not os.path.exists(os.path.join(app.config['GENERATED_FOLDER'], 'css')):
-        os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'css'))
-    if not os.path.exists(os.path.join(app.config['GENERATED_FOLDER'], 'js')):
-        os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'js'))
+    os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+    os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'html'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'css'), exist_ok=True)
+    os.makedirs(os.path.join(app.config['GENERATED_FOLDER'], 'js'), exist_ok=True)
     app.run(debug=True)
