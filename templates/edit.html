@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Generated Code</title>
+</head>
+<body>
+    <h1>Edit Generated Code</h1>
+    <form method="post">
+        <h2>HTML</h2>
+        <textarea name="html" rows="20" cols="100">{{ html_code }}</textarea>
+        <h2>CSS</h2>
+        <textarea name="css" rows="10" cols="100">{{ css_code }}</textarea>
+        <h2>JavaScript</h2>
+        <textarea name="js" rows="10" cols="100">{{ js_code }}</textarea>
+        <br>
+        <input type="submit" value="Save Changes">
+    </form>
+    <br>
+    <a href="/static/html/generated.html" download="generated.html">Download HTML</a>
+    <a href="/static/css/style.css" download="style.css">Download CSS</a>
+    <a href="/static/js/script.js" download="script.js">Download JavaScript</a>
+</body>
+</html>
