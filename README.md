@@ -21,8 +21,8 @@ This Flask application converts uploaded design files (images or PDFs) into HTML
 1. **Clone the repository:**
 
    ```bash
-   git clone https://github.com/yourusername/design-to-code.git
-   cd design-to-code
+   git clone https://github.com/kisalnelaka/ezweb.git
+   cd ezweb
    ```
 
 2. **Create and activate a virtual environment:**
